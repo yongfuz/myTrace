@@ -1,0 +1,382 @@
+package com.pactera.bg.budsc.bank.yongfu.controller;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.util.ObjectUtils;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.frw.way.commons.utils.ExceptionHandle;
+import com.github.pagehelper.StringUtil;
+import com.pactera.bg.budsc.bank.yongfu.config.RabbitConfig;
+import com.pactera.bg.budsc.bank.yongfu.jdpush.JpushClientUtil;
+import com.pactera.bg.budsc.bank.yongfu.po.JpushClient;
+import com.pactera.bg.budsc.bank.yongfu.po.Point;
+import com.pactera.bg.budsc.bank.yongfu.po.Register;
+import com.pactera.bg.budsc.bank.yongfu.po.Trace;
+import com.pactera.bg.budsc.bank.yongfu.po.User;
+import com.pactera.bg.budsc.bank.yongfu.po.UserDistrictCodes;
+import com.pactera.bg.budsc.bank.yongfu.po.UserFriend;
+import com.pactera.bg.budsc.bank.yongfu.po.UserRegistrationId;
+import com.pactera.bg.budsc.bank.yongfu.rabbit.MsgProducer;
+import com.pactera.bg.budsc.bank.yongfu.serviceI.RegisterServiceI;
+import com.pactera.bg.budsc.bank.yongfu.serviceI.TraceServiceI;
+import com.pactera.bg.budsc.bank.yongfu.serviceI.UserDistrictCodesServiceI;
+import com.pactera.bg.budsc.bank.yongfu.serviceI.UserFriendServiceI;
+import com.pactera.bg.budsc.bank.yongfu.serviceI.UserRegistrationIdServiceI;
+import com.pactera.bg.budsc.bank.yongfu.serviceI.UserServiceI;
+import com.pactera.bg.budsc.bank.yongfu.util.RedisUtil;
+import com.pactera.bg.budsc.bank.yongfu.util.RegisterUtil;
+
+/**
+ * @author 作者:zyf
+ * @createDate 创建时间：2018年10月31日 上午10:46:14
+ */
+
+@Controller
+@RequestMapping(value = "/myApp")
+public class MyAppController {
+	Logger logger = LoggerFactory.getLogger(MyAppController.class);
+
+	@Resource
+	private MsgProducer msgProducer;
+
+	@Autowired
+	private RegisterServiceI registerService;
+
+	@Autowired
+	private UserFriendServiceI userFriendService;
+
+	@Autowired
+	private UserServiceI userService;
+
+	@Autowired
+	private TraceServiceI traceService;
+
+	@Autowired
+	private UserDistrictCodesServiceI userDistrictCodesService;
+
+	@Autowired
+	private UserRegistrationIdServiceI userRegistrationIdService;
+
+	/**
+	 * 用户注册接口
+	 * 
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@RequestMapping(value = "/register")
+	@ResponseBody
+	public Map<String, Object> register(HttpServletRequest request, HttpServletResponse response) {
+		logger.info("接收注册请求...");
+		response.setContentType("application/text;charset=utf-8");
+		Map<String, Object> map = new HashMap<String, Object>();
+		try {
+			// 点信息数据入库
+			String userName = request.getParameter("userName").trim();
+			String password = request.getParameter("password").trim();
+			String registerIp = RegisterUtil.getIp(request);
+			// 判断用户是否已经存在
+			Register register = registerService.selectByUserName(userName);
+			if (!ObjectUtils.isEmpty(register)) {
+				map.put("resultCode", "AAA001");
+				map.put("resultMsg", "用户已存在！");
+				return map;
+			}
+			register.setUserName(userName);
+			register.setPassword(password);
+			register.setRegisterIp(registerIp);
+			int insert = registerService.insert(register);
+			// 注册用户的同时初始化行政区划
+			UserDistrictCodes userDistrictCodes = new UserDistrictCodes();
+			userDistrictCodes.setUserName(userName);
+			userDistrictCodesService.insert(userDistrictCodes);
+			if (insert > 0) {
+				map.put("resultCode", "AAA000");
+				map.put("resultMsg", "注册成功！");
+			} else {
+				map.put("resultCode", "AAA002");
+				map.put("resultMsg", "用户注册失败！");
+			}
+		} catch (Exception e) {
+			logger.error(ExceptionHandle.extractMsg(e));
+			map.put("resultCode", "AAA002");
+			map.put("resultMsg", "用户注册失败！");
+		}
+		logger.info(map.toString());
+		return map;
+	}
+
+	/**
+	 * 用户登录接口
+	 * 
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@RequestMapping(value = "/login")
+	@ResponseBody
+	public Map<String, Object> login(HttpServletRequest request, HttpServletResponse response) {
+		logger.info("接收登录请求...");
+		response.setContentType("application/text;charset=utf-8");
+		Map<String, Object> map = new HashMap<String, Object>();
+		try {
+			// 点信息数据入库
+			String userName = request.getParameter("userName");
+			String password = request.getParameter("password");
+			String loginIp = RegisterUtil.getIp(request);
+			int port = request.getRemotePort();
+			Register register = registerService.selectByUserName(userName);
+			if (ObjectUtils.isEmpty(register)) {
+				map.put("resultCode", "AAA001");
+				map.put("resultMsg", "该用户未注册！");
+				return map;
+			}
+			// 校验密码是否正确
+			boolean checkPassword = checkPassword(register.getPassword(), password);
+			// 如果密码正确，更新ip信息及isLogin状态为1（0未登录，1登录）
+			if (checkPassword) {
+				User user = new User();
+				user.setUserName(userName);
+				user.setLoginIp(loginIp);
+				user.setLoginPort(port);
+				// 登录类型 1 手机2电脑
+				user.setLoginType("1");
+				user.setLastLoginSign("1");
+				// 先将所有lastLoginSign更新为空，再插入最后一条数据
+				userService.updateByUserName(userName);
+				int insert = userService.insert(user);
+				if (insert == 1) {
+					map.put("resultCode", "AAA000");
+					map.put("resultMsg", "登录成功！");
+				} else {
+					map.put("resultCode", "AAA001");
+					map.put("resultMsg", "保存失败！");
+				}
+			} else {
+				map.put("resultCode", "AAA002");
+				map.put("resultMsg", "用户名或密码错误！");
+			}
+		} catch (Exception e) {
+			logger.error(ExceptionHandle.extractMsg(e));
+		}
+		logger.info(map.toString());
+		return map;
+	}
+
+	@RequestMapping(value = "/acquireReq")
+	public void acquireReq(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		logger.info("接收到手机端请求...");
+		response.setContentType("application/text;charset=utf-8");
+	}
+
+	// 保存每个人的路径信息,直接将信息写入redis保存
+	@RequestMapping(value = "/insertTrace")
+	@ResponseBody
+	public List<User> insertTrace(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		response.setContentType("application/text;charset=utf-8");
+		try {
+			String userName = request.getParameter("userName");
+			jpushOtherPoint(userName);
+			String latitude = request.getParameter("latitude");
+			String longitude = request.getParameter("longitude");
+			String createTime = request.getParameter("createTime");
+			logger.info("接收到用户：" + userName + "手机端保存路径的请求...");
+			Trace trace = new Trace();
+			trace.setUserName(userName);
+			trace.setStartTime(createTime);
+			trace.setCreateTime(createTime);
+			trace.setLatitude(Double.parseDouble(latitude));
+			trace.setLongitude(Double.parseDouble(longitude));
+			msgProducer.sendMsg(null, RabbitConfig.QUEUE_A, JSON.toJSONString(trace));
+		} catch (Exception e) {
+			logger.error(ExceptionHandle.extractMsg(e));
+		}
+		return null;
+	}
+
+	// 推送其他好友的点信息到此用户
+	public void jpushOtherPoint(String userName) {
+		logger.info("推送其他好友的点信息到userName用户请求开始...");
+		UserRegistrationId selectByPrimaryKey = userRegistrationIdService.selectByPrimaryKey(userName);
+		List<UserFriend> firends = userFriendService.selectByUserName(userName);
+		String[] keys = (String[]) firends.toArray();
+		List<String> mget = RedisUtil.mget(RedisUtil.intDb, keys);
+		JpushClient jpushClient = new JpushClient();
+		jpushClient.setRegistrationId(selectByPrimaryKey.getRegistrationId());
+		jpushClient.setNotificationTitle("jpushOtherPoint");
+		jpushClient.setExtrasParam(JSON.toJSONString(mget));
+		int result = JpushClientUtil.sendToRegistrationId(jpushClient);
+		System.out.println("推送结果:" + result);
+		logger.info("推送其他好友的点信息到userName用户请求结束...");
+	}
+
+	/**
+	 * 对应我的足迹，按照时间返回1000个点进行数据展示
+	 * 
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	@RequestMapping(value = "/getAllTraces")
+	@ResponseBody
+	public List<Point> getAllTraces(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		logger.info("接收到手机端保存路径的请求...");
+		response.setContentType("application/text;charset=utf-8");
+		List<Point> list = new ArrayList<Point>();
+		try {
+			String startTime = request.getParameter("startTime");
+			String endTime = request.getParameter("endTime");
+			String userJson = request.getParameter("user");
+			User user = JSONObject.parseObject(userJson, User.class);
+			user.setStartTime(startTime);
+			user.setEndTime(endTime);
+			if (StringUtils.isNotEmpty(user.getUserName())) {
+				logger.info("请求足迹信息--->" + user.toString());
+				list = traceService.getAllTraces(user);
+				logger.info("足迹信息长度--->" + list.size());
+			} else {
+				logger.info("请求足迹信息，无用户信息...");
+			}
+		} catch (Exception e) {
+			logger.error(ExceptionHandle.extractMsg(e));
+		}
+		return list;
+	}
+
+	private boolean checkPassword(String registerPassword, String loginPassword) {
+		boolean b = false;
+		if (!ObjectUtils.isEmpty(loginPassword)) {
+			if (StringUtils.endsWith(registerPassword, loginPassword)) {
+				b = true;
+			}
+		}
+		return b;
+	}
+
+	/**
+	 * 获取我历史的行政区划信息
+	 * 
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	@RequestMapping(value = "/getCodes")
+	@ResponseBody
+	public Map<String, Object> getCodes(HttpServletRequest request) throws IOException {
+		logger.info("接收到手机端获取行政区划的请求...");
+		Map<String, Object> map = new HashMap<String, Object>();
+		String userName = request.getParameter("userName");
+		String codes = request.getParameter("codes");
+		logger.info("----->请求行政区划信息userName：" + userName + ",codes:" + codes);
+		UserDistrictCodes selectByUserName = userDistrictCodesService.selectByUserName(userName);
+		try {
+			// 查询出此用户的行政区划信息，并与传过来的值进行比对，如果数据库不包含传过来的行政区划，则添加入库
+			String diffrence = getDiffrence(codes, selectByUserName.getCodes());
+			selectByUserName.setCodes(diffrence);
+			userDistrictCodesService.update(selectByUserName);
+			map.put("codes", diffrence);
+		} catch (Exception e) {
+			logger.error(ExceptionHandle.extractMsg(e));
+		}
+		logger.info("接收到手机端获取行政区划的请求结束...");
+		return map;
+	}
+
+	/**
+	 * 
+	 * @param newDis
+	 *            用户手机端传过来的行政区划
+	 * @param oldDis
+	 *            数据库保存的行政区划
+	 * @return 返回数据库没有的行政区划数据
+	 */
+	public String getDiffrence(String newDis, String oldDis) {
+		oldDis = oldDis.replaceAll("\"", "").replaceAll("\\\\", "");
+		StringBuffer sb = new StringBuffer(oldDis);
+		if (StringUtil.isEmpty(newDis)) {
+			return oldDis;
+		}
+		if (StringUtil.isEmpty(oldDis)) {
+			return newDis;
+		}
+		String[] newSplit = newDis.split(",");
+		for (int i = 0; i < newSplit.length; i++) {
+			if (!oldDis.contains(newSplit[i]) && StringUtils.isNotEmpty(newSplit[i])) {
+				sb.append(newSplit[i] + ",");
+			}
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * 保存jpush的registration_id信息
+	 * 
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	@RequestMapping(value = "/insertRegistrationId")
+	@ResponseBody
+	public Map<String, Object> insertRegistrationId(HttpServletRequest request) {
+		logger.info("接收到jpush的registration_id信息的请求...");
+		Map<String, Object> map = new HashMap<String, Object>();
+		String userName = request.getParameter("userName");
+		String registrationId = request.getParameter("registrationId");
+		logger.info("----->保存jpush的registration_id信息userName：" + userName + ",registrationId:" + registrationId);
+		// 入库之前先查询是否有数据，有则update没有则insert
+		UserRegistrationId selectByPrimaryKey = userRegistrationIdService.selectByPrimaryKey(userName);
+		UserRegistrationId userRegistrationId = new UserRegistrationId();
+		userRegistrationId.setUserName(userName);
+		userRegistrationId.setRegistrationId(registrationId);
+		if (selectByPrimaryKey != null) {
+			int update = userRegistrationIdService.update(userRegistrationId);
+			if (update >= 1) {
+				map.put("resultCode", "AAA000");
+				map.put("resultMsg", "registrationId保存成功！");
+			} else {
+				map.put("resultCode", "AAA001");
+				map.put("resultMsg", "registrationId保存失败！");
+			}
+		} else {
+			int insert = userRegistrationIdService.insert(userRegistrationId);
+			if (insert >= 1) {
+				map.put("resultCode", "AAA000");
+				map.put("resultMsg", "registrationId保存成功！");
+			} else {
+				map.put("resultCode", "AAA001");
+				map.put("resultMsg", "registrationId保存失败！");
+			}
+		}
+		JpushClient jpushClient = new JpushClient();
+		jpushClient.setRegistrationId(registrationId);
+		jpushClient.setMsgContent("这个是消息内容");
+		jpushClient.setMsgTitle("这个是标题");
+		jpushClient.setNotificationTitle("这个是通知标题");
+		jpushClient.setExtrasParam("这个是其他参数内容");
+		int result = JpushClientUtil.sendToRegistrationId(jpushClient);
+		System.out.println("推送结果:" + result);
+		logger.info("接收到jpush的registration_id信息的请求結束...");
+		return map;
+	}
+}

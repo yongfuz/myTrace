@@ -1,0 +1,56 @@
+server.port=8090
+server.context-path=/zyf
+##########spring.thymeleaf config start################
+spring.thymeleaf.prefix=classpath:/templates/
+#spring.thymeleaf.suffix=.html
+#spring.thymeleaf.mode=HTML5
+#spring.thymeleaf.encoding=UTF-8
+# ;charset=<encoding> is added
+#spring.thymeleaf.content-type=text/html 
+# set to false for hot refresh
+spring.thymeleaf.cache=false
+##########spring.thymeleaf config end##################
+spring.http.multipart.max-file-size=500MB
+spring.http.multipart.max-request-size=1000MB
+server.tomcat.basedir=d:/TempDir/
+
+#DATASOURCE
+spring.datasource.dbType=mysql
+spring.datasource.name=fullerton-ssc
+spring.datasource.url=jdbc:mysql://106.13.50.135:3306/map?useUnicode=true&characterEncoding=UTF-8
+spring.datasource.driverClassName=com.mysql.jdbc.Driver
+spring.datasource.username=root
+spring.datasource.password=root
+
+
+
+spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+spring.datasource.initialSize=5
+spring.datasource.minIdle=5
+spring.datasource.maxActive=400
+spring.datasource.maxWait=60000
+spring.datasource.timeBetweenEvictionRunsMillis=60000
+spring.datasource.minEvictableIdleTimeMillis=300000
+spring.datasource.removeAbandonedTimeout=1800
+spring.datasource.validationQuery=select 'X' from dual
+spring.datasource.testWhileIdle=true
+spring.datasource.testOnBorrow=false
+spring.datasource.testOnReturn=false
+spring.datasource.filters=stat,log4j
+spring.datasource.poolPreparedStatements=true
+spring.datasource.maxOpenPreparedStatements=20
+spring.datasource.maxPoolPreparedStatementPerConnectionSize=20
+spring.datasource.useGlobalDataSourceStat=true
+spring.datasource.connectionProperties=druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+
+spring.datasource.druid.stat-view-servlet.login-username=admin
+spring.datasource.druid.stat-view-servlet.login-password=admin
+spring.datasource.druid.stat-view-servlet.allow=
+spring.datasource.druid.stat-view-servlet.deny=
+spring.datasource.druid.stat-view-servlet.reset-enable=false
+
+
+mybatis.mapper-locations=classpath*:mapper/*Mapper.xml  
+mybatis.type-aliases-package=com.pactera.bg.budsc.bank.yongfu.po
+
+

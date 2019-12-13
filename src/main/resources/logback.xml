@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration>
+	<property resource="config.properties" />
+	<appender name="RootFileAppender"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${logFilePath}/dzp.log</file>
+		<append>true</append>
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>info</level>
+		</filter>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<FileNamePattern>${logFilePath}/dzp-%d{"yyyy-MM-dd"}-%i.log
+			</FileNamePattern>
+			<TimeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<MaxFileSize>10MB</MaxFileSize>
+			</TimeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<pattern>[%5p] [%d{"yyyy-MM-dd HH:mm:ss,SSS"}] [%L][%c.%M] >>> %m%n
+			</pattern>
+		</layout>
+	</appender>
+
+	<appender name="RootConsoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>debug</level>
+		</filter>
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<pattern>[%5p] [%d{"yyyy-MM-dd HH:mm:ss,SSS"}] [%L][%c.%M] >>> %m%n
+			</pattern>
+		</layout>
+	</appender>
+
+
+	<contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+		<resetJUL>true</resetJUL>
+	</contextListener>
+	<logger name="com.boc.fullerton.bank.dzp.mapper" additivity="true">
+		<level value="debug"/>
+	</logger>
+	<root>
+		<level value="info" />
+		<appender-ref ref="RootFileAppender" />
+		<appender-ref ref="RootConsoleAppender" />
+	</root>
+
+</configuration>

@@ -1,0 +1,148 @@
+package com.pactera.bg.budsc.bank.yongfu.po;
+
+public class User {
+	private String id;
+	private String userName;
+	private String password;
+	private String createTime;
+	private String ip;
+	private String registerIp;
+	private String lastLoginTime;
+	private String unique;
+	private String isLogin;
+	private String latLng;
+	private Point point;
+	// 查询的开始时间和结束时间
+	private String startTime;
+	private String endTime;
+	// 每次查询1000个点，如果点数超过1000，超过的倍数为num
+	private double num;
+
+	public User() {
+		super();
+	}
+
+	public User(String userName) {
+		super();
+		this.userName = userName;
+	}
+
+	public String getRegisterIp() {
+		return registerIp;
+	}
+
+	public void setRegisterIp(String registerIp) {
+		this.registerIp = registerIp;
+	}
+
+	public double getNum() {
+		return num;
+	}
+
+	public void setNum(double num) {
+		this.num = num;
+	}
+
+	public String getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(String startTime) {
+		this.startTime = startTime;
+	}
+
+	public String getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(String endTime) {
+		this.endTime = endTime;
+	}
+
+	public Point getPoint() {
+		return point;
+	}
+
+	public void setPoint(Point point) {
+		this.point = point;
+	}
+
+	public String getLatLng() {
+		return latLng;
+	}
+
+	public void setLatLng(String latLng) {
+		this.latLng = latLng;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getUserName() {
+		return userName;
+	}
+
+	public void setUserName(String userName) {
+		this.userName = userName;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public String getCreateTime() {
+		return createTime;
+	}
+
+	public void setCreateTime(String createTime) {
+		this.createTime = createTime;
+	}
+
+	public String getIp() {
+		return ip;
+	}
+
+	public void setIp(String ip) {
+		this.ip = ip;
+	}
+
+	public String getLastLoginTime() {
+		return lastLoginTime;
+	}
+
+	public void setLastLoginTime(String lastLoginTime) {
+		this.lastLoginTime = lastLoginTime;
+	}
+
+	public String getUnique() {
+		return unique;
+	}
+
+	public void setUnique(String unique) {
+		this.unique = unique;
+	}
+
+	public String getIsLogin() {
+		return isLogin;
+	}
+
+	public void setIsLogin(String isLogin) {
+		this.isLogin = isLogin;
+	}
+
+	@Override
+	public String toString() {
+		return "User [id=" + id + ", userName=" + userName + ", password=" + password + ", createTime=" + createTime + ", ip=" + ip + ", lastLoginTime=" + lastLoginTime + ", unique=" + unique
+				+ ", isLogin=" + isLogin + ", latLng=" + latLng + ", point=" + point + "]";
+	}
+
+}

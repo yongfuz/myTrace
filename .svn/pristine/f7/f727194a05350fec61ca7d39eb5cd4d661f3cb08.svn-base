@@ -1,0 +1,36 @@
+package com.pactera.bg.budsc.bank.yongfu.controller;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+
+public class Test {
+	public static void main(String[] args) throws Exception {
+		// Socket socket = new Socket("218.26.54.180", 19572);
+		// Socket socket = new Socket("106.12.3.217", 10000,
+		// InetAddress.getLocalHost(), 10000);
+		Socket socket = new Socket();
+		socket.setReuseAddress(true);
+		/*socket.bind(new InetSocketAddress(10002));
+		socket.connect(new InetSocketAddress("106.12.3.217", 9999));*/
+		socket.bind(new InetSocketAddress(10002));
+		//socket.connect(new InetSocketAddress("114.245.38.174", 10001));
+		socket.connect(new InetSocketAddress("114.245.38.174", 10001));
+		OutputStream out = socket.getOutputStream();
+		InputStream in = socket.getInputStream();
+		while (true) {
+			PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(out)), true);
+			pw.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+			Thread.sleep(5000);
+			BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			String str = br.readLine();
+			System.out.println("收到服务端消息: " + str);
+		}
+	}
+}

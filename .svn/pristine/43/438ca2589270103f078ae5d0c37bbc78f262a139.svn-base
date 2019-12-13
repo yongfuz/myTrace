@@ -1,0 +1,61 @@
+package com.pactera.bg.budsc.bank.yongfu.timer;
+
+import java.util.Date;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import com.frw.way.commons.utils.DateUtil;
+import com.frw.way.commons.utils.ExceptionHandle;
+import com.pactera.bg.budsc.bank.yongfu.controller.MyAppController;
+import com.pactera.bg.budsc.bank.yongfu.serviceI.TraceServiceI;
+import com.pactera.bg.budsc.bank.yongfu.serviceI.UserServiceI;
+import com.pactera.bg.budsc.bank.yongfu.util.RedisUtil;
+
+/**
+ * 定时任务
+ */
+@Service
+@EnableScheduling
+public class SchedulesTask {
+	Logger logger = LoggerFactory.getLogger(MyAppController.class);
+	private int count = 0;
+	@Autowired
+	private UserServiceI userService;
+
+	@Autowired
+	private TraceServiceI traceService;
+
+	/**
+	 * 判断用户是否在线，最后一次请求超过时间则判断用户下线
+	 */
+	// @Scheduled(cron = "0/5 * * * * ?")
+	public void isAlive() {
+		try {
+			Date date = new Date();
+			logger.info("定时修改下线用户开始--->" + DateUtil.format(date, "yyyy-MM-dd HH:mm:ss"));
+			int update = userService.updateExit();
+			logger.info("定时修改下线用户结束。");
+		} catch (Exception e) {
+			logger.error(ExceptionHandle.extractMsg(e));
+		}
+	}
+
+	/**
+	 * RedisUtil.intDb存储用户连续三秒点信息，用count对3取余计算这次应该存那个库
+	 */
+	@Scheduled(cron = "0/1 * * * * ?")
+	public void switchList() {
+		try {
+			int number = count % 3;
+			RedisUtil.intDb = 14 - number;
+			++count;
+		} catch (Exception e) {
+			logger.error(ExceptionHandle.extractMsg(e));
+		}
+	}
+}

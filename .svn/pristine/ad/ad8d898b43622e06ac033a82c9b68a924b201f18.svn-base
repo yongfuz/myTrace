@@ -1,0 +1,15 @@
+package com.pactera.bg.budsc.bank.yongfu.redis;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import redis.clients.jedis.Jedis;
+
+public class Redis {
+	
+	public void insert(){
+		Jedis jedis=new Jedis();
+		jedis.append("", "");
+		
+	}
+}

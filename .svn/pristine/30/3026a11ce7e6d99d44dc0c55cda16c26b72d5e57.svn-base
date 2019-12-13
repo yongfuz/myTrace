@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.pactera.bg.budsc.bank.yongfu.mapper.UserMapper">
+	<resultMap id="BaseResultMap" type="com.pactera.bg.budsc.bank.yongfu.po.User">
+		<id column="id" property="id" jdbcType="VARCHAR" />
+		<result column="user_name" property="userName" jdbcType="VARCHAR" />
+		<result column="password" property="password" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="DATE" />
+		<result column="ip" property="ip" jdbcType="VARCHAR" />
+		<result column="last_login_time" property="lastLoginTime" jdbcType="DATE" />
+		<result column="unique_sign" property="unique" jdbcType="VARCHAR" />
+		<result column="is_login" property="isLogin" jdbcType="CHAR" />
+		<result column="point" property="latLng" jdbcType="VARCHAR" />
+		<result column="register_ip" property="registerIp" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		id, user_name, password, create_time, ip, last_login_time, unique_sign, is_login,register_ip
+	</sql>
+
+	<insert id="insert" parameterType="com.pactera.bg.budsc.bank.yongfu.po.User">
+		insert into map_user (
+		<include refid="Base_Column_List" />
+		)
+		values (#{id,jdbcType=VARCHAR}, #{userName,jdbcType=VARCHAR},
+		#{password,jdbcType=VARCHAR},
+		#{createTime,jdbcType=DATE}, #{ip,jdbcType=VARCHAR}, #{lastLoginTime,jdbcType=DATE},
+		#{unique,jdbcType=VARCHAR}, #{isLogin,jdbcType=CHAR},#{registerIp,jdbcType=CHAR})
+	</insert>
+
+	<select id="select" parameterType="com.pactera.bg.budsc.bank.yongfu.po.User" resultMap="BaseResultMap">
+		select
+		<include refid="Base_Column_List" />
+		from map_user
+		<where>
+			<if test="id != null and id !=''">
+				and id = #{id}
+			</if>
+			<if test="userName != null and userName !=''">
+				and user_name = #{userName}
+			</if>
+		</where>
+		order by create_Time
+	</select>
+	<update id="update" parameterType="com.pactera.bg.budsc.bank.yongfu.po.User">
+		update map_user
+		<set>
+			<if test="userName != null">
+				user_name = #{userName,jdbcType=VARCHAR},
+			</if>
+			<if test="password != null">
+				password = #{password,jdbcType=VARCHAR},
+			</if>
+			<if test="createTime != null">
+				create_time = #{createTime,jdbcType=DATE},
+			</if>
+			<if test="ip != null">
+				ip = #{ip,jdbcType=VARCHAR},
+			</if>
+			<if test="lastLoginTime != null">
+				last_login_time = sysdate(),
+			</if>
+			<if test="unique != null">
+				unique_sign = #{unique,jdbcType=VARCHAR},
+			</if>
+			<if test="isLogin != null">
+				is_login = #{isLogin,jdbcType=CHAR},
+			</if>
+		</set>
+		where id = #{id,jdbcType=VARCHAR}
+	</update>
+	<select id="selectFirends" parameterType="java.util.Map" resultMap="BaseResultMap">
+		SELECT
+			u.user_name user_name,
+			u.ip ip,
+			tr.create_time create_time,
+			tr.point point
+		FROM
+			map_user u
+		LEFT JOIN map_trace tr ON u.user_name = tr.user_id
+		INNER JOIN (
+			SELECT
+				t.user_id,
+				max(t.create_time) create_time
+			FROM
+				map_trace t
+			GROUP BY
+				t.user_id
+		) a ON tr.user_id = a.user_id
+		<where>
+			and tr.create_time = a.create_time
+			AND u.user_name != #{userId}
+			AND u.is_login = '1'
+		</where>
+		GROUP BY	tr.user_id
+	</select>
+	
+	<update id="updateExit">
+		UPDATE map_user
+		SET is_login = '0'
+		WHERE 
+			id IN (
+				SELECT
+					*
+				FROM
+					(
+						SELECT
+							u.id
+						FROM
+							map_user u,
+							map_trace t
+						WHERE
+							u.is_login = '1'
+						AND u.id = t.user_id
+						AND t.last_point_sign='1'
+						AND timestampdiff(
+							SECOND,
+							IFNULL(t.end_time, t.start_time),
+							SYSDATE()
+						) &gt;= 6
+					) ids
+			)
+	</update>
+</mapper>

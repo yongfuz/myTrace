@@ -1,0 +1,70 @@
+Manifest-Version: 1.0
+Implementation-Title: zhang-yong-fu
+Implementation-Version: 0.0.1-SNAPSHOT
+Built-By: ￯ﾼﾟ
+Implementation-Vendor-Id: com.pactera.bg.budsc.bank
+Class-Path: ./ lib/jedis-2.9.0.jar lib/commons-pool2-2.4.3.jar lib/spr
+ ing-boot-starter-web-1.5.9.RELEASE.jar lib/spring-boot-starter-1.5.9.
+ RELEASE.jar lib/spring-boot-1.5.9.RELEASE.jar lib/spring-boot-autocon
+ figure-1.5.9.RELEASE.jar lib/spring-boot-starter-logging-1.5.9.RELEAS
+ E.jar lib/logback-classic-1.1.11.jar lib/logback-core-1.1.11.jar lib/
+ jul-to-slf4j-1.7.25.jar lib/log4j-over-slf4j-1.7.25.jar lib/snakeyaml
+ -1.17.jar lib/spring-boot-starter-tomcat-1.5.9.RELEASE.jar lib/tomcat
+ -embed-core-8.5.23.jar lib/tomcat-annotations-api-8.5.23.jar lib/tomc
+ at-embed-el-8.5.23.jar lib/tomcat-embed-websocket-8.5.23.jar lib/hibe
+ rnate-validator-5.3.6.Final.jar lib/validation-api-1.1.0.Final.jar li
+ b/jboss-logging-3.3.1.Final.jar lib/classmate-1.3.4.jar lib/jackson-d
+ atabind-2.8.10.jar lib/spring-web-4.3.13.RELEASE.jar lib/spring-aop-4
+ .3.13.RELEASE.jar lib/spring-beans-4.3.13.RELEASE.jar lib/spring-cont
+ ext-4.3.13.RELEASE.jar lib/spring-webmvc-4.3.13.RELEASE.jar lib/sprin
+ g-expression-4.3.13.RELEASE.jar lib/spring-boot-starter-data-redis-1.
+ 5.9.RELEASE.jar lib/spring-data-redis-1.8.9.RELEASE.jar lib/spring-da
+ ta-keyvalue-1.2.9.RELEASE.jar lib/spring-tx-4.3.13.RELEASE.jar lib/sp
+ ring-oxm-4.3.13.RELEASE.jar lib/spring-context-support-4.3.13.RELEASE
+ .jar lib/jcl-over-slf4j-1.7.25.jar lib/spring-boot-starter-thymeleaf-
+ 1.5.9.RELEASE.jar lib/thymeleaf-spring4-2.1.6.RELEASE.jar lib/thymele
+ af-2.1.6.RELEASE.jar lib/ognl-3.0.8.jar lib/unbescape-1.1.0.RELEASE.j
+ ar lib/thymeleaf-layout-dialect-1.4.0.jar lib/groovy-2.4.13.jar lib/s
+ pring-boot-starter-data-jpa-1.5.9.RELEASE.jar lib/spring-boot-starter
+ -aop-1.5.9.RELEASE.jar lib/spring-boot-starter-jdbc-1.5.9.RELEASE.jar
+  lib/tomcat-jdbc-8.5.23.jar lib/tomcat-juli-8.5.23.jar lib/spring-jdb
+ c-4.3.13.RELEASE.jar lib/hibernate-core-5.0.12.Final.jar lib/hibernat
+ e-jpa-2.1-api-1.0.0.Final.jar lib/javassist-3.21.0-GA.jar lib/antlr-2
+ .7.7.jar lib/jandex-2.0.0.Final.jar lib/dom4j-1.6.1.jar lib/hibernate
+ -commons-annotations-5.0.1.Final.jar lib/hibernate-entitymanager-5.0.
+ 12.Final.jar lib/javax.transaction-api-1.2.jar lib/spring-data-jpa-1.
+ 11.9.RELEASE.jar lib/spring-data-commons-1.13.9.RELEASE.jar lib/sprin
+ g-orm-4.3.13.RELEASE.jar lib/spring-aspects-4.3.13.RELEASE.jar lib/my
+ batis-spring-boot-starter-1.1.1.jar lib/mybatis-spring-boot-autoconfi
+ gure-1.1.1.jar lib/mybatis-3.4.0.jar lib/mybatis-spring-1.3.0.jar lib
+ /spring-core-4.3.13.RELEASE.jar lib/spring-boot-admin-starter-client-
+ 1.5.7.jar lib/spring-boot-admin-client-1.5.7.jar lib/spring-boot-star
+ ter-actuator-1.5.9.RELEASE.jar lib/spring-boot-actuator-1.5.9.RELEASE
+ .jar lib/jolokia-core-1.3.7.jar lib/json-simple-1.1.1.jar lib/druid-1
+ .0.31.jar lib/ojdbc6-11.2.0.1.0.jar lib/mysql-connector-java-5.1.44.j
+ ar lib/commons-lang-2.6.jar lib/commons-io-2.4.jar lib/jackson-datafo
+ rmat-xml-2.8.10.jar lib/jackson-core-2.8.10.jar lib/jackson-annotatio
+ ns-2.8.0.jar lib/jackson-module-jaxb-annotations-2.8.10.jar lib/stax2
+ -api-3.1.4.jar lib/woodstox-core-5.0.3.jar lib/xstream-1.4.9.jar lib/
+ xmlpull-1.1.3.1.jar lib/xpp3_min-1.1.4c.jar lib/httpclient-4.5.3.jar 
+ lib/httpcore-4.4.8.jar lib/commons-codec-1.10.jar lib/httpmime-4.5.3.
+ jar lib/fastjson-1.2.15.jar lib/pagehelper-4.1.4.jar lib/jsqlparser-0
+ .9.5.jar lib/aspectjweaver-1.8.13.jar lib/frw-druid-1.0.2-RELEASE.jar
+  lib/frw-commons-1.0.3.RELEASE.jar lib/guava-23.0.jar lib/jsr305-1.3.
+ 9.jar lib/error_prone_annotations-2.0.18.jar lib/j2objc-annotations-1
+ .1.jar lib/animal-sniffer-annotations-1.14.jar lib/dozer-5.5.1.jar li
+ b/commons-beanutils-1.9.2.jar lib/commons-collections-3.2.2.jar lib/c
+ ommons-lang3-3.2.1.jar lib/sm-helper-1.0.0-RELEASE.jar lib/commons-ea
+ syui-1.0.1-RELEASE.jar lib/spring-boot-starter-amqp-1.5.2.RELEASE.jar
+  lib/spring-messaging-4.3.13.RELEASE.jar lib/spring-rabbit-1.7.4.RELE
+ ASE.jar lib/http-client-1.1.1.RELEASE.jar lib/amqp-client-4.0.3.jar l
+ ib/spring-retry-1.2.1.RELEASE.jar lib/spring-amqp-1.7.4.RELEASE.jar l
+ ib/jpush-client-3.3.10.jar lib/jiguang-common-1.1.4.jar lib/netty-all
+ -4.1.6.Final.jar lib/gson-2.3.jar lib/slf4j-api-1.7.7.jar lib/slf4j-l
+ og4j12-1.7.7.jar lib/log4j-1.2.17.jar
+Build-Jdk: 1.8.0_192
+Implementation-URL: http://maven.apache.org
+Created-By: Maven Integration for Eclipse
+Implementation-Vendor: Pivotal Software, Inc.
+Main-Class: com.pactera.bg.budsc.bank.yongfu.YongFuBootStrap
+

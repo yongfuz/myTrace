@@ -1,0 +1,120 @@
+package com.pactera.bg.budsc.bank.yongfu.timer;
+
+import java.util.Date;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import com.alibaba.fastjson.JSON;
+import com.frw.way.commons.utils.DateUtil;
+import com.frw.way.commons.utils.ExceptionHandle;
+import com.github.pagehelper.StringUtil;
+import com.pactera.bg.budsc.bank.yongfu.controller.MyAppController;
+import com.pactera.bg.budsc.bank.yongfu.po.Trace;
+import com.pactera.bg.budsc.bank.yongfu.serviceI.TraceServiceI;
+import com.pactera.bg.budsc.bank.yongfu.serviceI.UserServiceI;
+import com.pactera.bg.budsc.bank.yongfu.util.CalendarUtil;
+import com.pactera.bg.budsc.bank.yongfu.util.DistanceUtil;
+import com.pactera.bg.budsc.bank.yongfu.util.RedisUtil;
+
+/**
+ * 定时任务
+ */
+@Service
+@EnableScheduling
+public class SchedulesTask {
+	Logger logger = LoggerFactory.getLogger(MyAppController.class);
+	private int count = 0;
+
+	@Autowired
+	private UserServiceI userService;
+
+	@Autowired
+	private TraceServiceI traceService;
+
+	/**
+	 * 判断用户是否在线，最后一次请求超过时间则判断用户下线
+	 */
+	// @Scheduled(cron = "0/5 * * * * ?")
+	public void isAlive() {
+		try {
+			Date date = new Date();
+			logger.info("定时修改下线用户开始--->" + DateUtil.format(date, "yyyy-MM-dd HH:mm:ss"));
+			int update = userService.updateExit();
+			logger.info("定时修改下线用户结束。");
+		} catch (Exception e) {
+			logger.error(ExceptionHandle.extractMsg(e));
+		}
+	}
+
+	/**
+	 * RedisUtil.intDb存储用户连续三秒点信息，用count对3取余计算这次应该存那个库,然后将第一个库数据进行保存
+	 */
+	@Scheduled(cron = "0/1 * * * * ?")
+	public void switchList() {
+		try {
+			count = count % 3;
+			RedisUtil.intDb = 14 - count;
+			int saveDb = 14 - (count + 1) % 3;
+			++count;
+			saveTrace(saveDb);
+		} catch (Exception e) {
+			logger.error(ExceptionHandle.extractMsg(e));
+		}
+	}
+
+	/**
+	 * 保存对象逻辑，先从redis库中取出所有数据，根据key从15的库中查询，1、如果没有则将数据添加到库中2、如果库中有则进行数据比对，
+	 * 比对逻辑1、两个点间隔大于10秒，则将15库中数据保存mysql，另外一条数据存入15库中，2、如果间隔小于10秒，两点距离大于5m，操作如上
+	 * 3、间隔小于10秒，间距小于5m，则将15库中数据的endTime更新为此点的createTime
+	 * 
+	 * @param db
+	 */
+	public void saveTrace(int db) {
+		Map<String, String> hgetAll = RedisUtil.getAll(db);
+		for (Map.Entry<String, String> entry : hgetAll.entrySet()) {
+			String mapKey = entry.getKey();
+			String mapValue = entry.getValue();
+			Trace newTrace = JSON.parseObject(mapValue, Trace.class);
+			String string = RedisUtil.get(RedisUtil.userLastInsertDb, mapKey);
+			if (StringUtil.isNotEmpty(string)) {
+				Trace baseTrace = JSON.parseObject(string, Trace.class);
+				long difTime = difTime(newTrace, baseTrace);
+				double distance = DistanceUtil.getDistance(newTrace.getLongitude(), newTrace.getLatitude(),
+						baseTrace.getLongitude(), baseTrace.getLatitude());
+				// 间隔小于10秒，间距小于5m
+				if (Math.abs(difTime) < 10 && Math.abs(distance) < 5) {
+					baseTrace.setEndTime(newTrace.getCreateTime());
+					baseTrace.setCreateTime(newTrace.getCreateTime());
+					RedisUtil.set(RedisUtil.userLastInsertDb, mapKey, JSON.toJSONString(baseTrace));
+				} else {
+					RedisUtil.set(RedisUtil.userLastInsertDb, mapKey, mapValue);
+					// TODO 后期修改为批量入库
+					traceService.insertOne(baseTrace);
+				}
+			} else {
+				RedisUtil.set(RedisUtil.userLastInsertDb, mapKey, mapValue);
+			}
+		}
+	}
+
+	/**
+	 * 两个点间隔时间是否大于10秒 大于返回true小于返回false
+	 * 
+	 * @return
+	 */
+	public long difTime(Trace newT, Trace oldT) {
+		Date newParse = DateUtil.parse(newT.getCreateTime(), "yyyy-MM-dd HH:mm:ss");
+		Date oldParse = DateUtil.parse(oldT.getCreateTime(), "yyyy-MM-dd HH:mm:ss");
+		long newLong = CalendarUtil.dateToLong(newParse);
+		long oldLong = CalendarUtil.dateToLong(oldParse);
+		long l = (newLong - oldLong) / 1000;
+		return l;
+	}
+
+}

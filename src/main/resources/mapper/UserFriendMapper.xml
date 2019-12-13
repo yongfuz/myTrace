@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.pactera.bg.budsc.bank.yongfu.mapper.UserFriendMapper" >
+  <resultMap id="BaseResultMap" type="com.pactera.bg.budsc.bank.yongfu.po.UserFriend" >
+    <result column="host_id" property="hostId" jdbcType="VARCHAR" />
+    <result column="friend_id" property="friendId" jdbcType="VARCHAR" />
+    <result column="create_time" property="createTime" jdbcType="VARCHAR" />
+    <result column="is_deleted" property="isDeleted" jdbcType="VARCHAR" />
+    <result column="who_deleted" property="whoDeleted" jdbcType="VARCHAR" />
+  </resultMap>
+  <insert id="insert" parameterType="com.pactera.bg.budsc.bank.yongfu.po.UserFriend" >
+    insert into pmap_user_friend (host_id, friend_id, create_time, 
+      is_deleted, who_deleted)
+    values (#{hostId,jdbcType=VARCHAR}, #{friendId,jdbcType=VARCHAR}, #{createTime,jdbcType=VARCHAR}, 
+      #{isDeleted,jdbcType=VARCHAR}, #{whoDeleted,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.pactera.bg.budsc.bank.yongfu.po.UserFriend" >
+    insert into pmap_user_friend
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="hostId != null" >
+        host_id,
+      </if>
+      <if test="friendId != null" >
+        friend_id,
+      </if>
+      <if test="createTime != null" >
+        create_time,
+      </if>
+      <if test="isDeleted != null" >
+        is_deleted,
+      </if>
+      <if test="whoDeleted != null" >
+        who_deleted,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="hostId != null" >
+        #{hostId,jdbcType=VARCHAR},
+      </if>
+      <if test="friendId != null" >
+        #{friendId,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null" >
+        #{createTime,jdbcType=VARCHAR},
+      </if>
+      <if test="isDeleted != null" >
+        #{isDeleted,jdbcType=VARCHAR},
+      </if>
+      <if test="whoDeleted != null" >
+        #{whoDeleted,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+</mapper>

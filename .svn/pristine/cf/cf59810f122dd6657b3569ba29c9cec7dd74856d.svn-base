@@ -1,0 +1,36 @@
+body {
+  line-height: 1;
+  background-image: url('../images/bg-ssc.jpg');
+  background-repeat: no-repeat;
+ 
+}
+
+#loginDiv{
+	background-color:#fefefe;
+	width:280px;
+	height:250px;
+	position:absolute;
+/* 	border:1px red solid; */
+	float:left;
+	top:200px;
+	left:850px;
+	padding:40px 40px;
+	box-shadow: 10px 10px 5px #888888;
+    border-radius:10px
+}
+
+.login-group{
+/* 	border:1px green solid; */
+	width:100%;
+	margin-bottom:40px;
+}
+.login-group label font{
+	font-size:16px;
+	font-weight:bord;
+}
+.login-textbox{
+	width:200px;
+	height:30px;
+	font-size:14px;
+	
+}

@@ -1,0 +1,26 @@
+# update talbe 
+createTable=true
+# create file dir 
+mkdirs=true
+
+# log file path 
+logFilePath=/home/szgacpg
+
+
+version_file_dir=d:/app/
+environment_file_dir=d:/app1/
+#version_file_dir=/home/crs_shared/versionfile/
+#environment_file_dir=/home/crs_shared/envfile/
+
+
+
+proxyAddr=http://10.10.83.113:8080
+
+
+#map
+login[username]=zhangshan
+login[password]=123456
+
+#list
+urls[0]=http://www.baidu.com
+urls[1]=http://www.jd.com

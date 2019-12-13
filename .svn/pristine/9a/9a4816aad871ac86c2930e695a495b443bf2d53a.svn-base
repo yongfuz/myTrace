@@ -1,0 +1,440 @@
+package com.pactera.bg.budsc.bank.yongfu.util;
+
+import java.io.InputStream;
+import java.util.Map;
+import java.util.PropertyResourceBundle;
+
+import org.springframework.stereotype.Component;
+
+import com.alibaba.druid.util.StringUtils;
+import com.alibaba.fastjson.JSON;
+import com.pactera.bg.budsc.bank.yongfu.po.Trace;
+
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
+
+/**
+ * 
+ * Redis工具类
+ * 
+ * @author ZENG.XIAO.YAN
+ * 
+ * @date 2018年6月7日
+ * 
+ */
+
+@Component
+public final class RedisUtil {
+
+	// Redis服务器IP
+	private static String ADDR;
+
+	// Redis的端口号
+	private static int PORT;
+
+	// 访问密码
+	private static String AUTH;
+
+	// 可用连接实例的最大数目，默认值为8；
+	// 如果赋值为-1，则表示不限制；如果pool已经分配了maxActive个jedis实例，则此时pool的状态为exhausted(耗尽)。
+	private static int MAX_ACTIVE;
+
+	// 控制一个pool最多有多少个状态为idle(空闲的)的jedis实例，默认值也是8。
+	private static int MAX_IDLE;
+
+	// 等待可用连接的最大时间，单位毫秒，默认值为-1，表示永不超时。如果超过等待时间，则直接抛出JedisConnectionException；
+	private static int MAX_WAIT;
+
+	private static int TIMEOUT;
+
+	// 在borrow一个jedis实例时，是否提前进行validate操作；如果为true，则得到的jedis实例均是可用的；
+	private static boolean TEST_ON_BORROW = true;
+
+	private static JedisPool jedisPool = null;
+	// 用来存储用户的点信息，分别用12、13、14来存储连续三秒钟内的用户数据,可通过修改定时任务的count来扩展保存几秒数据，通过定时进行切换
+	public static int intDb = 14;
+	// 用户最后一次保存的点信息，其它数据库入前先与此数据进行比对，如果小于一定范围则不再重复入库，但是时间进行修改
+	private int userLastInsertDb = 15;
+	/**
+	 * 初始化Redis连接池
+	 */
+	static {
+		try {
+			// 初始化配置
+			// redis.properties需放在resource文件夹下
+			InputStream fis = RedisUtil.class.getClassLoader().getResourceAsStream("application.properties");
+			PropertyResourceBundle props = new PropertyResourceBundle(fis);
+			ADDR = props.getString("spring.redis.host");
+			PORT = Integer.parseInt(props.getString("spring.redis.port"));
+			AUTH = props.getString("spring.redis.password");
+			MAX_ACTIVE = Integer.parseInt(props.getString("spring.redis.pool.max-active"));
+			MAX_IDLE = Integer.parseInt(props.getString("spring.redis.pool.max-idle"));
+			MAX_WAIT = Integer.parseInt(props.getString("spring.redis.pool.max-wait"));
+			TIMEOUT = Integer.parseInt(props.getString("spring.redis.timeout"));
+
+			JedisPoolConfig config = new JedisPoolConfig();
+			config.setMaxTotal(MAX_ACTIVE);
+			config.setMaxIdle(MAX_IDLE);
+			config.setMaxWaitMillis(MAX_WAIT);
+			config.setTestOnBorrow(TEST_ON_BORROW);
+			// 判断有没有AUTH
+			if (StringUtils.isEmpty(AUTH)) {// 如果没有密码
+				jedisPool = new JedisPool(config, ADDR, PORT, TIMEOUT);
+			} else {
+				jedisPool = new JedisPool(config, ADDR, PORT, TIMEOUT, AUTH);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 获取Jedis实例
+	 * 
+	 * @return
+	 */
+	public static Jedis getJedis() {
+		try {
+			if (jedisPool != null) {
+				Jedis resource = jedisPool.getResource();
+				return resource;
+			} else {
+				return null;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	/**
+	 * 释放jedis资源
+	 * 
+	 * @param jedis
+	 */
+	public static void returnResource(final Jedis jedis) {
+		if (jedis != null) {
+			//jedis.close();
+			jedisPool.returnResource(jedis);
+		}
+	}
+
+	/**
+	 * redis set操作
+	 * 
+	 * @param db
+	 *            操作的数据库编号
+	 * @param key
+	 * @param value
+	 * @return
+	 */
+	public static String set(int db, String key, String value) {
+		Jedis jedis = null;
+		String result = null;
+		try {
+			jedis = getJedis();
+			if (jedis != null) {
+				jedis.select(db);
+				result = jedis.set(key, value);
+			}
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+			returnResource(jedis);
+			return result;
+		} finally {
+			returnResource(jedis);
+		}
+	}
+
+	/**
+	 * redis setex操作
+	 * 
+	 * @param db
+	 *            操作的数据库编号
+	 * @param key
+	 * @param value
+	 * @param seconds
+	 * @return
+	 */
+	public static String setex(int db, String key, String value, int seconds) {
+		Jedis jedis = null;
+		String result = null;
+		try {
+			jedis = getJedis();
+			if (jedis != null) {
+				jedis.select(db);
+				result = jedis.setex(key, seconds, value);
+			}
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+			returnResource(jedis);
+			return result;
+		} finally {
+			returnResource(jedis);
+		}
+	}
+
+	/**
+	 * redis set操作
+	 * 
+	 * @param db
+	 *            操作的数据库编号
+	 * @param key
+	 * @return
+	 */
+	public static String get(int db, String key) {
+		Jedis jedis = null;
+		String value = null;
+		try {
+			jedis = getJedis();
+			if (jedis != null) {
+				jedis.select(db);
+				value = jedis.get(key);
+			}
+			return value;
+		} catch (Exception e) {
+			e.printStackTrace();
+			returnResource(jedis);
+			return value;
+		} finally {
+			returnResource(jedis);
+		}
+	}
+
+	/**
+	 * redis del操作
+	 * 
+	 * @param db
+	 *            操作的数据库编号
+	 * @param key
+	 * @return
+	 */
+	public static Long del(int db, String key) {
+		Jedis jedis = null;
+		Long result = null;
+		try {
+			jedis = getJedis();
+			if (jedis != null) {
+				jedis.select(db);
+				result = jedis.del(key);
+			}
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+			returnResource(jedis);
+			return result;
+		} finally {
+			returnResource(jedis);
+		}
+	}
+
+	/**
+	 * redis hmset操作
+	 * 
+	 * @param db
+	 *            操作的数据库编号
+	 * @param key
+	 * @param value
+	 * @return
+	 */
+	public static String hmset(int db, String key, Map<String, String> value) {
+		Jedis jedis = null;
+		String result = null;
+		try {
+			jedis = getJedis();
+			if (jedis != null) {
+				jedis.select(db);
+				result = jedis.hmset(key, value);
+			}
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+			returnResource(jedis);
+			return result;
+		} finally {
+			returnResource(jedis);
+		}
+	}
+
+	/**
+	 * redis hmset操作,设置过期时间
+	 * 
+	 * @param db
+	 *            操作的数据库编号
+	 * @param key
+	 * @param value
+	 * @param seconds
+	 *            过期时间
+	 * @return
+	 */
+	public static String hmsetex(int db, String key, Map<String, String> value, int seconds) {
+		Jedis jedis = null;
+		String result = null;
+		try {
+			jedis = getJedis();
+			if (jedis != null) {
+				jedis.select(db);
+				result = jedis.hmset(key, value);
+				jedis.expire(key, seconds);
+			}
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+			returnResource(jedis);
+			return result;
+		} finally {
+			returnResource(jedis);
+		}
+	}
+
+	/**
+	 * redis hgetAll操作
+	 * 
+	 * @param db
+	 *            操作的数据库编号
+	 * @param key
+	 * @return
+	 */
+	public static Map<String, String> hgetAll(int db, String key) {
+		Jedis jedis = null;
+		Map<String, String> value = null;
+		try {
+			jedis = getJedis();
+			if (jedis != null) {
+				jedis.select(db);
+				value = jedis.hgetAll(key);
+			}
+			return value;
+		} catch (Exception e) {
+			e.printStackTrace();
+			returnResource(jedis);
+			return value;
+		} finally {
+			returnResource(jedis);
+		}
+	}
+
+	/**
+	 * redis sismember操作
+	 * 
+	 * @param db
+	 *            操作的数据库编号
+	 * @param key
+	 * @param member
+	 * @return
+	 */
+	public static boolean sismember(int db, String key, String member) {
+		Jedis jedis = null;
+		boolean result = false;
+		try {
+			jedis = getJedis();
+			if (jedis != null) {
+				jedis.select(db);
+				result = jedis.sismember(key, member);
+			}
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+			returnResource(jedis);
+			return result;
+		} finally {
+			returnResource(jedis);
+		}
+	}
+
+	/**
+	 * redis lpush操作
+	 * 
+	 * @param db
+	 *            操作的数据库编号
+	 * @param key
+	 * @param value
+	 * @return
+	 */
+	public static long lpush(int db, String key, String value) {
+		Jedis jedis = null;
+		long result = 0;
+		try {
+			jedis = getJedis();
+			if (jedis != null) {
+				jedis.select(db);
+				result = jedis.lpush(key, value);
+			}
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+			returnResource(jedis);
+			return result;
+		} finally {
+			returnResource(jedis);
+		}
+	}
+
+	/**
+	 * redis rpop操作
+	 * 
+	 * @param db
+	 *            操作的数据库编号
+	 * @param key
+	 * @return
+	 */
+	public static String rpop(int db, String key) {
+		Jedis jedis = null;
+		String value = null;
+		try {
+			jedis = getJedis();
+			if (jedis != null) {
+				jedis.select(db);
+				value = jedis.rpop(key);
+			}
+			return value;
+		} catch (Exception e) {
+			e.printStackTrace();
+			returnResource(jedis);
+			return value;
+		} finally {
+			returnResource(jedis);
+		}
+	}
+
+	/**
+	 * redis hset操作
+	 * 
+	 * @param db
+	 *            操作的数据库编号
+	 * @param key
+	 * @param field
+	 * @param value
+	 * @return
+	 */
+	public static long hset(int db, String key, String field, String value) {
+		Jedis jedis = null;
+		long result = 0;
+		try {
+			jedis = getJedis();
+			if (jedis != null) {
+				jedis.select(db);
+				result = jedis.hset(key, field, value);
+			}
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+			returnResource(jedis);
+			return result;
+		} finally {
+			returnResource(jedis);
+		}
+	}
+
+	/**
+	 * 将用户的点信息如redis，key为username，value为点信息
+	 * @param trace
+	 */
+	public void insertTrace(Trace trace) {
+		set(intDb, trace.getUserName(), JSON.toJSONString(trace));
+	}
+}

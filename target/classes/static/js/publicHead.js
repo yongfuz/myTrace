@@ -1,0 +1,10 @@
+document.write('<link rel="stylesheet" href="/ssc/easyui/1.3.2/themes/default/easyui.css" />');
+document.write('<link rel="stylesheet" href="/ssc/css/wu.css" />');
+document.write('<link rel="stylesheet" href="/ssc/css/icon.css" />');
+document.write('<link rel="stylesheet" href="/ssc/css/publicPage.css" />');
+document.write('<script type="text/javascript" src="/ssc/js/jquery-1.8.0.min.js"></script>');
+document.write('<script type="text/javascript" src="/ssc/easyui/1.3.2/jquery.easyui.min.js"></script>');
+document.write('<script type="text/javascript" src="/ssc/easyui/1.3.2/locale/easyui-lang-zh_CN.js"></script>');
+//document.write('<script type="text/javascript" src="/ssc/js/publicMethod.js"></script>');
+//document.write('<script type="text/javascript" src="/ssc/easyui/1.3.2/easyui.validatebox.js"></script>');
+//document.write('<script type="text/javascript" src="/ssc/easyui/1.3.2/easyui.dateformat.js"></script>');

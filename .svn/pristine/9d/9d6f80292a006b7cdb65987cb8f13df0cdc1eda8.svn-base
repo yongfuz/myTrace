@@ -1,0 +1,18 @@
+package com.pactera.bg.budsc.bank.zhang_yong_fu;
+
+
+import org.junit.Test;
+
+import com.frw.way.commons.utils.UUIDUtils;
+
+/**
+ * Unit test for simple App.
+ */
+public class AppTest{
+
+	/*@Test
+	public void test1() {
+		String id = UUIDUtils.nextIdString();
+		System.out.println(id);
+	}*/
+}

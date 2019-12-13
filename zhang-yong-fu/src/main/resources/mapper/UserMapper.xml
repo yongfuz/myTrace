@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.pactera.bg.budsc.bank.yongfu.mapper.UserMapper">
+	<resultMap id="BaseResultMap" type="com.pactera.bg.budsc.bank.yongfu.po.User">
+		<result column="ID" property="id" jdbcType="VARCHAR" />
+		<result column="ENTRY_PARAMS" property="entryParams" javaType="string" jdbcType="CLOB" />
+		<result column="METHOD" property="method" jdbcType="VARCHAR" />
+		<result column="MSG" property="msg" javaType="string" jdbcType="CLOB" />
+		<result column="CLASS_NAME" property="className" jdbcType="VARCHAR" />
+		<result column="CREATE_TIME" property="createTime" jdbcType="TIMESTAMP" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		ID,latLng;
+	</sql>
+	<!-- <insert id="insert" parameterType="com.pactera.bg.budsc.bank.yongfu.po.User">
+		insert into user (
+		<include refid="Base_Column_List" />
+		)
+		values (#{id,jdbcType=VARCHAR}, #{entryParams,jdbcType=VARCHAR},
+		#{method,jdbcType=VARCHAR},#{msg,jdbcType=VARCHAR},#{className,jdbcType=VARCHAR},sysdate)
+	</insert> -->
+
+	<select id="select" parameterType="com.pactera.bg.budsc.bank.yongfu.po.User" resultMap="BaseResultMap">
+		select
+		<include refid="Base_Column_List" />
+		from user
+		<where>
+			<if test="id != null and id !=''">
+				ID = #{id}
+			</if>
+		</where>
+		order by create_Time
+	</select>
+</mapper>

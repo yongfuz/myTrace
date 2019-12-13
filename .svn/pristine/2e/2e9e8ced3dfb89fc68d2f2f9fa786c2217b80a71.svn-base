@@ -1,0 +1,236 @@
+package com.pactera.bg.budsc.bank.yongfu.controller;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.util.ObjectUtils;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.alibaba.fastjson.JSONObject;
+import com.frw.way.commons.utils.DateUtil;
+import com.frw.way.commons.utils.ExceptionHandle;
+import com.frw.way.commons.utils.UUIDUtils;
+import com.pactera.bg.budsc.bank.yongfu.po.Point;
+import com.pactera.bg.budsc.bank.yongfu.po.Trace;
+import com.pactera.bg.budsc.bank.yongfu.po.User;
+import com.pactera.bg.budsc.bank.yongfu.serviceI.TraceServiceI;
+import com.pactera.bg.budsc.bank.yongfu.serviceI.UserServiceI;
+
+/**
+ * @author 作者:lz
+ * @createDate 创建时间：2018年10月31日 上午10:46:14
+ */
+
+@Controller
+@RequestMapping(value = "/myApp")
+public class MyAppController {
+	Logger logger = LoggerFactory.getLogger(MyAppController.class);
+
+	@Autowired
+	private UserServiceI userService;
+
+	@Autowired
+	private TraceServiceI traceService;
+
+	@RequestMapping(value = "/login")
+	@ResponseBody
+	public Map<String, Object> login(HttpServletRequest request, HttpServletResponse response) {
+		logger.info("接收登录请求...");
+		response.setContentType("application/text;charset=utf-8");
+		Map<String, Object> map = new HashMap<String, Object>();
+		try {
+			// 点信息数据入库
+			String userName = request.getParameter("userName");
+			String password = request.getParameter("password");
+			String ip = request.getParameter("ip");
+			// String uuid = request.getParameter("uuid");
+			User userQuery = new User(userName);
+			User user = userService.selectById(userQuery);
+			// 校验密码是否正确
+			boolean checkPassword = checkPassword(password, user);
+			// 如果密码正确，更新ip信息及isLogin状态为1（0未登录，1登录）
+			if (checkPassword) {
+				user.setIsLogin("1");
+				user.setIp(ip);
+				int insert = userService.update(user);
+				if (insert == 1) {
+					map.put("resultCode", "AAA000");
+					map.put("resultMsg", "登录成功！");
+				} else {
+					map.put("resultCode", "AAA001");
+					map.put("resultMsg", "保存失败！");
+				}
+			} else {
+				map.put("resultCode", "AAA002");
+				map.put("resultMsg", "用户名或密码错误！");
+			}
+			userService.select(user);
+		} catch (Exception e) {
+			logger.error(ExceptionHandle.extractMsg(e));
+		}
+		logger.info(map.toString());
+		return map;
+	}
+
+	@RequestMapping(value = "/register")
+	@ResponseBody
+	public Map<String, Object> register(HttpServletRequest request, HttpServletResponse response) {
+		logger.info("接收登录请求...");
+		response.setContentType("application/text;charset=utf-8");
+		Map<String, Object> map = new HashMap<String, Object>();
+		try {
+			// 点信息数据入库
+			String userName = request.getParameter("userName");
+			String password = request.getParameter("password");
+			String registerIp = request.getParameter("ip");
+			User user = new User(userName);
+			String id = UUIDUtils.nextIdString();
+			logger.info("插入的id值-----------------》" + id);
+			user.setId(id);
+			user.setPassword(password);
+			user.setRegisterIp(registerIp);
+			int insert = userService.insert(user);
+			if (insert > 0) {
+				map.put("resultCode", "AAA000");
+				map.put("resultMsg", "注册成功！");
+			} else {
+				map.put("resultCode", "AAA002");
+				map.put("resultMsg", "用户注册失败！");
+			}
+		} catch (Exception e) {
+			logger.error(ExceptionHandle.extractMsg(e));
+			map.put("resultCode", "AAA002");
+			map.put("resultMsg", "用户注册失败！");
+		}
+		logger.info(map.toString());
+		return map;
+	}
+
+	@RequestMapping(value = "/acquireReq")
+	public void acquireReq(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		logger.info("接收到手机端请求...");
+		response.setContentType("application/text;charset=utf-8");
+	}
+
+	// 保存每个人的路径信息,保存的同时查询其他好友的点信息
+	@RequestMapping(value = "/insertTraceData")
+	@ResponseBody
+	public List<User> insertTraceData(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		logger.info("接收到手机端保存路径的请求...");
+		response.setContentType("application/text;charset=utf-8");
+		try {
+			// 点信息数据入库
+			String str = request.getParameter("list");
+			Trace trace = JSONObject.parseObject(str, Trace.class);
+			if (trace != null) {
+				// 根据用户名获取用户id
+				String userId = getUserIdByUserName(trace.getUserId());
+				trace.setUserId(userId);
+				// 当传过来的路径点，1、不为空先更新最后一条的sign为空，在插入一条；2、为空更新最后一条的endTime，
+				if (trace.getPoint() != null) {
+					logger.info("有点信息，先更新后插入...");
+					// 更新last的sign为空
+					updateLastSignById(userId);
+					trace.setLastPointSign("1");
+					traceService.insertOne(trace);
+				} else {
+					logger.info("无信息，直接更新最后一条数据...");
+					String date = DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss");
+					trace.setEndTime(date);
+					traceService.updateLastSignById(trace);
+				}
+			} else {
+				logger.info("请求信息有误...");
+			}
+		} catch (Exception e) {
+			logger.error(ExceptionHandle.extractMsg(e));
+		}
+		Map<String, String> map = new HashMap<String, String>();
+		List<User> firends = getFirends(map);
+		return firends;
+	}
+
+	public String getUserIdByUserName(String userName) {
+		// 根据用户名查询id
+		User user = new User();
+		user.setUserName(userName);
+		List<User> select = userService.select(user);
+		String userId = select.get(0).getId();
+		return userId;
+	}
+
+	/**
+	 * 修改最后一个点的时候，先将之前的lastPointSign的标志置为空
+	 * 
+	 * @param userId用户id
+	 */
+	public void updateLastSignById(String userId) {
+		Trace trace = new Trace();
+		trace.setUserId(userId);
+		trace.setLastPointSign("");
+		traceService.updateLastSignById(trace);
+	}
+
+	/**
+	 * 对应我的足迹，按照时间返回1000个点进行数据展示
+	 * 
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	@RequestMapping(value = "/getAllTraces")
+	@ResponseBody
+	public List<Point> getAllTraces(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		logger.info("接收到手机端保存路径的请求...");
+		response.setContentType("application/text;charset=utf-8");
+		List<Point> list = new ArrayList<Point>();
+		try {
+			String startTime = request.getParameter("startTime");
+			String endTime = request.getParameter("endTime");
+			String userJson = request.getParameter("user");
+			User user = JSONObject.parseObject(userJson, User.class);
+			user.setStartTime(startTime);
+			user.setEndTime(endTime);
+			if (StringUtils.isNotEmpty(user.getUserName())) {
+				logger.info("请求足迹信息--->" + user.toString());
+				list = traceService.getAllTraces(user);
+				logger.info("足迹信息长度--->" + list.size());
+			} else {
+				logger.info("请求足迹信息，无用户信息...");
+			}
+		} catch (Exception e) {
+			logger.error(ExceptionHandle.extractMsg(e));
+		}
+		return list;
+	}
+
+	private List<User> getFirends(Map<String, String> map) {
+		// 将所有用户的最近一条数据取出
+		List<User> firends = userService.selectFirends(map);
+		return firends;
+	}
+
+	private boolean checkPassword(String password, User user) {
+		boolean b = false;
+		if (!ObjectUtils.isEmpty(user)) {
+			if (StringUtils.endsWith(user.getPassword(), password)) {
+				b = true;
+			}
+		}
+		return b;
+	}
+}

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.pactera.bg.budsc.bank.yongfu.mapper.TraceMapper">
+	<resultMap id="BaseResultMap" type="com.pactera.bg.budsc.bank.yongfu.po.Trace">
+		<result column="user_name" property="userName" jdbcType="VARCHAR" />
+		<result column="start_time" property="startTime" jdbcType="VARCHAR" />
+		<result column="end_time" property="endTime" jdbcType="VARCHAR" />
+		<result column="create_time" property="createTime" jdbcType="VARCHAR" />
+		<result column="longitude" property="longitude" jdbcType="VARCHAR" />
+		<result column="latitude" property="latitude" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		user_name,start_time,end_time,create_Time,longitude,latitude
+	</sql>
+
+	<insert id='insert' parameterType='java.util.Map'>
+		insert into pmap_user_trace (
+		<include refid="Base_Column_List" />
+		)
+		SELECT A.*
+		FROM(
+		<foreach collection='values' item='value' index='index' separator='UNION ALL'>
+			SELECT ${value} FROM dual
+		</foreach>
+		)A
+	</insert>
+	<insert id='insertOne' parameterType='com.pactera.bg.budsc.bank.yongfu.po.Trace'>
+		insert into pmap_user_trace (
+		<include refid="Base_Column_List" />
+		)
+		values (#{userName,jdbcType=VARCHAR}, #{startTime,jdbcType=VARCHAR},
+		#{endTime,jdbcType=VARCHAR},#{createTime,jdbcType=VARCHAR},
+		#{longitude,jdbcType=VARCHAR},#{latitude,jdbcType=VARCHAR})
+	</insert>
+	<select id="select" parameterType="com.pactera.bg.budsc.bank.yongfu.po.Trace" resultMap="BaseResultMap">
+		select
+		<include refid="Base_Column_List" />
+		from pmap_user_trace
+		<where>
+			<if test="userName != null and userName !=''">
+				and user_Name = #{userName}
+			</if>
+		</where>
+		order by start_Time
+	</select>
+
+	<select id="getCount" parameterType="com.pactera.bg.budsc.bank.yongfu.po.User" resultType="Integer">
+		select
+		count(*)
+		from pmap_user_trace
+		<where>
+			<if test="userName != null and userName !=''">
+				and user_name= #{userName}
+			</if>
+			<if test="startTime != null and startTime !=''">
+				and start_time &gt;= #{startTime}
+			</if>
+			<if test="endTime != null and endTime !=''">
+				and start_time &lt;= #{endTime}
+			</if>
+			<!-- <if test="endTime != null and endTime !=''">
+				and start_time &lt;= str_to_date(#{endTime}, '%Y-%m-%d %H:%i:%s')
+			</if> -->
+		</where>
+	</select>
+
+	<select id="getAllTraces" parameterType="com.pactera.bg.budsc.bank.yongfu.po.User" resultMap="BaseResultMap">
+		select * from (select @n:=@n+1 as n, a.* from (select
+		trace.latitude,trace.longitude
+		from pmap_user_trace trace join map_user us on trace.user_id=us.id
+		<where>
+			<if test="userName != null and userName !=''">
+				and us.user_name= #{userName}
+			</if>
+			<if test="startTime != null and startTime !=''">
+				and trace.start_time &gt;= str_to_date(#{startTime}, '%Y-%m-%d %H:%i:%s')
+			</if>
+			<if test="endTime != null and endTime !=''">
+				and trace.start_time &lt;= str_to_date(#{endTime}, '%Y-%m-%d %H:%i:%s')
+			</if>
+		</where>
+		order by trace.start_Time desc)a,
+		(select @n:=0)b)c where c.n%#{num} &lt; 2 and c.n%#{num}!=0;
+	</select>
+
+	<update id="updateLastSignById" parameterType="com.pactera.bg.budsc.bank.yongfu.po.Trace">
+		update pmap_user_trace
+		<set>
+			<if test="endTime != null and endTime !=''">
+				end_time = str_to_date(#{endTime}, '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test="lastPointSign != null">
+				last_point_sign = #{lastPointSign,jdbcType=VARCHAR},
+			</if>
+		</set>
+		<where>
+			and user_id= #{userId,jdbcType=VARCHAR}
+			and	last_point_sign = '1'
+		</where>
+	</update>
+</mapper>

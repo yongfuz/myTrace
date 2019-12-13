@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper
+	namespace="com.pactera.bg.budsc.bank.yongfu.mapper.UserDistrictCodesMapper">
+	<resultMap id="BaseResultMap"
+		type="com.pactera.bg.budsc.bank.yongfu.po.UserDistrictCodes">
+		<result column="user_name" property="userName" jdbcType="VARCHAR" />
+		<result column="codes" property="codes" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		user_name,codes,update_time
+	</sql>
+
+	<insert id='insertBatch' parameterType='java.util.Map'>
+		insert into pmap_user_district_codes (
+		<include refid="Base_Column_List" />
+		)
+		SELECT A.*
+		FROM(
+		<foreach collection='values' item='value' index='index'
+			separator='UNION ALL'>
+			SELECT ${value} FROM dual
+		</foreach>
+		)A
+	</insert>
+
+	<insert id='insert'
+		parameterType='com.pactera.bg.budsc.bank.yongfu.po.UserDistrictCodes'>
+		insert into pmap_user_district_codes (
+		<include refid="Base_Column_List" />
+		)
+		values (#{userName,jdbcType=VARCHAR},
+		#{codes,jdbcType=VARCHAR},sysdate())
+	</insert>
+
+	<select id="selectByUserName" parameterType="java.lang.String"
+		resultMap="BaseResultMap">
+		select
+		<include refid="Base_Column_List" />
+		from pmap_user_district_codes
+		<where>
+			and user_name = #{userName}
+		</where>
+	</select>
+
+	<update id="update"
+		parameterType="com.pactera.bg.budsc.bank.yongfu.po.UserDistrictCodes">
+		update pmap_user_district_codes
+		<set>
+			codes = #{codes,jdbcType=VARCHAR},
+			update_time = sysdate(),
+		</set>
+		<where>
+			and user_name= #{userName,jdbcType=VARCHAR}
+		</where>
+	</update>
+</mapper>

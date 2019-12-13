@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>个人征信</title>
+<script type="text/javascript" th:src="@{/js/publicHead.js}"></script>
+<script type="text/javascript" th:src="@{/js/toCheckInfo/toCheckInfoPage.js}"></script>
+<script th:inline="javascript">
+   var psCertType=[[${psCertType}]];
+   var editStatus=[[${editStatus}]];
+</script>
+</head>
+<body>
+	<div id="cc" class="easyui-layout" style="width: 100%; height: 400px;">
+		<div data-options="region:'north',title:'查询条件',split:false" style="height: 100%;">
+			<input type="hidden" id="toCheckTime" name="toCheckTime" th:value="${toCheckTime.paramsValue}" />
+			<input type="hidden" id="toCheckWarnTime" name="toCheckWarnTime" th:value="${toCheckWarnTime.paramsValue}" />
+			<form id="searchForm" method="post">
+				<table>
+					<tr>
+						<td align="right" style="padding-left: 35px;"><label for="cusId">异议事项号:</label></td>
+						<td><input type="text" name="objCheckId" id="objCheckId" /></td>
+						<td align="right" style="padding-left: 35px;"><label for="cusId">姓名:</label></td>
+						<td><input style="width: 198px;" type="text" name="name" id="name"/></td>
+						<td align="right" style="padding-left: 35px"><label for="cusId">证件类型:</label></td>
+						<td><select id="idType" name="idType" style="width: 200px;">
+								<option value="">全部</option>
+								<option name="opname" th:each="channelsub:${psCertType}" th:value="${channelsub.code}" th:title="${channelsub.msg}" th:text="${channelsub.msg}"></option>
+						</select></td>
+					</tr>
+					<tr>
+						<td align="right" style="padding-left: 35px"><label for="cusId">证件号码:</label></td>
+						<td><input type="text" name="idNum" id="idNum" /></td>
+						<td align="right" style="padding-left: 35px"><label for="cusId">处理状态:</label></td>
+						<td><select id="editStatus" name="editStatus" style="width: 200px;">
+								<option value="">全部</option>
+								<option name="opname" th:each="channelsub:${editStatus}" th:value="${channelsub.code}" th:text="${channelsub.msg}"></option>
+						</select></td>
+						<td align="center" colspan="8"><a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-search'" onclick="query()">查询</a> &nbsp;&nbsp;&nbsp;<a
+							href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-undo'" onclick="reset()">清空</a></td>
+					</tr>
+				</table>
+			</form>
+		</div>
+
+		<div data-options="region:'center'" style="padding: 5px; background: #eee;">
+			<input type="text" readonly="true" style="background-color: #ffff00; width: 5%; margin: 5px;" /><label>即将超期</label> <input type="text" readonly="true"
+				style="background-color: #ff0000; width: 5%; margin: 5px;" /><label>已超期</label>
+			<table id="datagrid"></table>
+		</div>
+	</div>
+
+	<div id="divWin" style="display: none" buttons="#dlg-buttons-add"></div>
+</body>
+</html>
+
+
