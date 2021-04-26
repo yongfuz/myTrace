@@ -20,7 +20,7 @@
 
 		<!-- commons utils -->
 		<commons-lang.version>2.6</commons-lang.version>
-		<commons-io.version>2.4</commons-io.version>
+		<commons-io.version>2.7</commons-io.version>
 		<pagehelper.version>4.1.4</pagehelper.version>
 		<commons-beanutils.version>1.9.2</commons-beanutils.version>
 		<ojdbc6.version>11.2.0.1.0</ojdbc6.version>
